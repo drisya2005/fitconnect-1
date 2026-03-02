@@ -129,16 +129,22 @@ app.get('/dashboard', authenticate, async (req, res) => {
   try {
     const [membSnap, usageSnap, workoutsSnap, bmiSnap, userSnap] = await Promise.all([
       db.collection('memberships').where('userId', '==', uid).get(),
-      db.collection('usageLogs').where('userId', '==', uid).orderBy('createdAt', 'desc').limit(10).get(),
-      db.collection('workouts').where('userId', '==', uid).orderBy('createdAt', 'desc').limit(30).get(),
-      db.collection('bmiLogs').where('userId', '==', uid).orderBy('createdAt', 'desc').limit(5).get(),
+      db.collection('usageLogs').where('userId', '==', uid).get(),
+      db.collection('workouts').where('userId', '==', uid).get(),
+      db.collection('bmiLogs').where('userId', '==', uid).get(),
       db.collection('users').doc(uid).get(),
     ]);
 
+    const sortFn = (a, b) => {
+      const tsA = a.createdAt?.toMillis?.() || 0;
+      const tsB = b.createdAt?.toMillis?.() || 0;
+      return tsB - tsA;
+    };
+
     const memberships = membSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const usageLogs = usageSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const workouts = workoutsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const bmiLogs = bmiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const usageLogs = usageSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortFn).slice(0, 10);
+    const workouts = workoutsSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortFn).slice(0, 30);
+    const bmiLogs = bmiSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortFn).slice(0, 5);
     const user = userSnap.exists ? userSnap.data() : {};
 
     const totalCalories = workouts.reduce((s, w) => s + (w.calories || 0), 0);
@@ -363,9 +369,11 @@ app.post('/gym/checkout', authenticate, async (req, res) => {
 app.get('/gym/history', authenticate, async (req, res) => {
   try {
     const snap = await db.collection('usageLogs')
-      .where('userId', '==', req.uid)
-      .orderBy('createdAt', 'desc').limit(50).get();
-    res.json({ ok: true, history: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+      .where('userId', '==', req.uid).get();
+    const history = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+      .slice(0, 50);
+    res.json({ ok: true, history });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -437,11 +445,12 @@ app.post('/fitness/workout', authenticate, async (req, res) => {
 app.get('/fitness/progress', authenticate, async (req, res) => {
   try {
     const [workoutsSnap, bmiSnap] = await Promise.all([
-      db.collection('workouts').where('userId', '==', req.uid).orderBy('createdAt', 'desc').limit(50).get(),
-      db.collection('bmiLogs').where('userId', '==', req.uid).orderBy('createdAt', 'desc').limit(10).get(),
+      db.collection('workouts').where('userId', '==', req.uid).get(),
+      db.collection('bmiLogs').where('userId', '==', req.uid).get(),
     ]);
-    const workouts = workoutsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const bmiLogs = bmiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const sortFn = (a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+    const workouts = workoutsSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortFn).slice(0, 50);
+    const bmiLogs = bmiSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort(sortFn).slice(0, 10);
     const totalCalories = workouts.reduce((s, w) => s + (w.calories || 0), 0);
     const totalMinutes = workouts.reduce((s, w) => s + (w.durationMin || 0), 0);
     const streak = calcStreak(workouts);
