@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fitness Tracking — FitConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            backdrop-filter: blur(14px);
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            font-size: .875rem;
+            font-weight: 500;
+            transition: color .2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #f1f5f9;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, .3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-white">
+
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/home.html" class="font-extrabold text-lg flex items-center gap-2">🏋️ <span
+                    class="gradient-text">FitConnect</span></a>
+            <div class="flex items-center gap-5">
+                <a href="/home.html" class="nav-link">Home</a>
+                <a href="/dashboard.html" class="nav-link">Dashboard</a>
+                <a href="/gyms.html" class="nav-link">Gyms</a>
+                <a href="/membership.html" class="nav-link">Membership</a>
+                <a href="/fitness.html" class="nav-link active">Fitness</a>
+                <a href="/profile.html" class="nav-link">Profile</a>
+                <button id="signOutBtn"
+                    class="bg-white/5 border border-white/10 text-slate-300 text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all">Sign
+                    out</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+            <!-- Workout Logging -->
+            <div>
+                <h1 class="text-3xl font-extrabold mb-2">Log Your <span class="gradient-text">Activity</span></h1>
+                <p class="text-slate-400 mb-8">Keep track of your grind. Every calorie counts.</p>
+
+                <form id="workoutForm" class="glass rounded-2xl p-8 space-y-4" onsubmit="logWorkout(event)">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-slate-400 text-xs font-medium block mb-1">Workout Type</label>
+                            <select id="workoutType"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/50">
+                                <option value="strength">Strength Training</option>
+                                <option value="cardio">Cardio</option>
+                                <option value="yoga">Yoga / Mobility</option>
+                                <option value="sport">Sports</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 text-xs font-medium block mb-1">Date</label>
+                            <input type="date" id="workoutDate" required
+                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-slate-400 text-xs font-medium block mb-1">Duration (min)</label>
+                            <input type="number" id="workoutDuration" required placeholder="45"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                        </div>
+                        <div>
+                            <label class="text-slate-400 text-xs font-medium block mb-1">Calories Burned</label>
+                            <input type="number" id="workoutCalories" required placeholder="300"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Notes</label>
+                        <textarea id="workoutNotes" rows="2" placeholder="How did it feel? (Optional)"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/50"></textarea>
+                    </div>
+                    <div id="workoutAlert"></div>
+                    <button type="submit" id="workoutBtn"
+                        class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <span>Save Workout</span>
+                        <span id="workoutSpinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- BMI Calculator -->
+            <div>
+                <h2 class="text-3xl font-extrabold mb-2">Body Mass <span class="gradient-text">Index</span></h2>
+                <p class="text-slate-400 mb-8">Calculate and track your BMI over time.</p>
+
+                <div class="glass rounded-2xl p-8">
+                    <form id="bmiForm" class="space-y-4 mb-8" onsubmit="calculateBmi(event)">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-slate-400 text-xs font-medium block mb-1">Height (cm)</label>
+                                <input type="number" id="bmiHeight" required placeholder="175"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                            </div>
+                            <div>
+                                <label class="text-slate-400 text-xs font-medium block mb-1">Weight (kg)</label>
+                                <input type="number" step="0.1" id="bmiWeight" required placeholder="70"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                            </div>
+                        </div>
+                        <div id="bmiAlert"></div>
+                        <button type="submit" id="bmiBtn"
+                            class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <span>Calculate & Save</span>
+                            <span id="bmiSpinner" class="spinner hidden"></span>
+                        </button>
+                    </form>
+
+                    <div id="bmiResult" class="hidden text-center p-6 bg-white/5 rounded-2xl border border-white/10">
+                        <p class="text-slate-400 text-sm mb-1 uppercase tracking-widest font-bold">Your BMI</p>
+                        <div id="bmiValue" class="text-5xl font-extrabold mb-2">22.5</div>
+                        <div id="bmiStatus"
+                            class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+                            Normal</div>
+                        <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden flex">
+                            <div class="h-full bg-cyan-400" style="width: 18.5%"></div>
+                            <div class="h-full bg-green-400" style="width: 6.5%"></div>
+                            <div class="h-full bg-yellow-400" style="width: 5%"></div>
+                            <div class="h-full bg-red-400" style="width: 70%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <span>18.5</span>
+                            <span>25.0</span>
+                            <span>30.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent History -->
+        <div class="mt-16">
+            <h2 class="text-2xl font-bold mb-6">📉 Your Progress History</h2>
+            <div id="loadingHistory" class="flex justify-center py-12">
+                <div class="spinner"></div>
+            </div>
+            <div id="historyContent" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-400 mb-4 tracking-widest uppercase">Recent Workouts</h3>
+                    <div id="workoutList" class="space-y-3"></div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-400 mb-4 tracking-widest uppercase">Recent BMI Logs</h3>
+                    <div id="bmiList" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initFirebase, fetchWithAuth, doSignOut } from '/firebase-init.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+        const { auth } = await initFirebase();
+        onAuthStateChanged(auth, async u => {
+            if (!u) { window.location.href = '/'; return; }
+            document.getElementById('workoutDate').valueAsDate = new Date();
+            await loadProgress();
+        });
+
+        document.getElementById('signOutBtn').onclick = async () => { await doSignOut(); window.location.href = '/'; };
+
+        async function loadProgress() {
+            try {
+                const res = await fetchWithAuth('/fitness/progress');
+                const data = await res.json();
+                if (!data.ok) return;
+
+                document.getElementById('loadingHistory').classList.add('hidden');
+                document.getElementById('historyContent').classList.remove('hidden');
+
+                // Render Workouts
+                const wList = document.getElementById('workoutList');
+                if (data.workouts.length) {
+                    wList.innerHTML = data.workouts.slice(0, 5).map(w => `
+            <div class="glass rounded-xl p-4 flex justify-between items-center">
+              <div>
+                <p class="font-bold capitalize">${w.type}</p>
+                <p class="text-xs text-slate-400">${w.durationMin} min · ${w.calories} cal</p>
+              </div>
+              <p class="text-xs text-slate-500 font-medium">${new Date(w.date._seconds * 1000).toLocaleDateString()}</p>
+            </div>`).join('');
+                } else {
+                    wList.innerHTML = '<p class="text-slate-500 text-sm italic">No workouts logged yet.</p>';
+                }
+
+                // Render BMI
+                const bList = document.getElementById('bmiList');
+                if (data.bmiLogs.length) {
+                    bList.innerHTML = data.bmiLogs.slice(0, 5).map(b => {
+                        const color = { Underweight: 'text-cyan-400', Normal: 'text-green-400', Overweight: 'text-yellow-400', Obese: 'text-red-400' }[b.status] || 'text-white';
+                        return `
+            <div class="glass rounded-xl p-4 flex justify-between items-center">
+              <div>
+                <p class="font-bold ${color}">${b.bmi} <span class="text-xs font-medium ml-2">— ${b.status}</span></p>
+                <p class="text-xs text-slate-400">${b.weightKg}kg · ${b.heightCm}cm</p>
+              </div>
+              <p class="text-xs text-slate-500 font-medium">${new Date(b.createdAt._seconds * 1000).toLocaleDateString()}</p>
+            </div>`;
+                    }).join('');
+                } else {
+                    bList.innerHTML = '<p class="text-slate-500 text-sm italic">No BMI logs yet.</p>';
+                }
+
+            } catch (err) { console.error(err); }
+        }
+
+        window.logWorkout = async e => {
+            e.preventDefault();
+            const btn = document.getElementById('workoutBtn');
+            const spinner = document.getElementById('workoutSpinner');
+            const alertBox = document.getElementById('workoutAlert');
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            alertBox.innerHTML = '';
+
+            const body = {
+                type: document.getElementById('workoutType').value,
+                date: document.getElementById('workoutDate').value,
+                durationMin: document.getElementById('workoutDuration').value,
+                calories: document.getElementById('workoutCalories').value,
+                notes: document.getElementById('workoutNotes').value
+            };
+
+            try {
+                const res = await fetchWithAuth('/fitness/workout', { method: 'POST', body: JSON.stringify(body) });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error);
+
+                alertBox.innerHTML = `<p class="mb-4 text-green-400 text-sm font-medium">Workout saved!</p>`;
+                document.getElementById('workoutForm').reset();
+                document.getElementById('workoutDate').valueAsDate = new Date();
+                await loadProgress();
+            } catch (err) {
+                alertBox.innerHTML = `<p class="mb-4 text-red-400 text-sm font-medium">${err.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+            }
+        };
+
+        window.calculateBmi = async e => {
+            e.preventDefault();
+            const btn = document.getElementById('bmiBtn');
+            const spinner = document.getElementById('bmiSpinner');
+            const alertBox = document.getElementById('bmiAlert');
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            alertBox.innerHTML = '';
+
+            const body = {
+                heightCm: document.getElementById('bmiHeight').value,
+                weightKg: document.getElementById('bmiWeight').value
+            };
+
+            try {
+                const res = await fetchWithAuth('/fitness/bmi', { method: 'POST', body: JSON.stringify(body) });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error);
+
+                const result = document.getElementById('bmiResult');
+                const val = document.getElementById('bmiValue');
+                const stat = document.getElementById('bmiStatus');
+
+                val.textContent = data.bmi;
+                stat.textContent = data.status;
+
+                const colors = { Underweight: 'bg-cyan-500/20 text-cyan-400', Normal: 'bg-green-500/20 text-green-400', Overweight: 'bg-yellow-500/20 text-yellow-400', Obese: 'bg-red-500/20 text-red-400' };
+                stat.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${colors[data.status]}`;
+                val.className = `text-5xl font-extrabold mb-2 ${colors[data.status].split(' ')[1]}`;
+
+                result.classList.remove('hidden');
+                await loadProgress();
+            } catch (err) {
+                alertBox.innerHTML = `<p class="mb-4 text-red-400 text-sm font-medium">${err.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+            }
+        };
+    </script>
+</body>
+
+</html>

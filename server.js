@@ -555,7 +555,7 @@ function calcStreak(workouts) {
 
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'auth', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`\n🏋️  FitConnect running → http://localhost:${PORT}\n`));

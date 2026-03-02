@@ -225,8 +225,19 @@
       try {
         const res = await fetchWithAuth('/dashboard');
         const data = await res.json();
-        if (!data.ok) return;
+        
         document.getElementById('loadingEl').classList.add('hidden');
+        
+        if (!data.ok) {
+          document.getElementById('mainContent').innerHTML = `
+            <div class="text-center py-16">
+              <p class="text-red-400 mb-4">Failed to load dashboard: ${data.error || 'Unknown error'}</p>
+              <button onclick="window.location.reload()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl">Retry</button>
+            </div>`;
+          document.getElementById('mainContent').classList.remove('hidden');
+          return;
+        }
+        
         document.getElementById('mainContent').classList.remove('hidden');
 
         const { stats, memberships, usageLogs, workouts, bmiLogs } = data;
