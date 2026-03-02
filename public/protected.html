@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Protected — FitConnect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container-centered">
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-semibold">Protected Page</h1>
+        <button id="signOutBtn" class="btn-muted">Sign out</button>
+      </div>
+      <p id="info" class="text-sm text-gray-700">Checking auth...</p>
+    </div>
+  </div>
+  <script type="module">
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+    // The page relies on the same firebase config used by index; re-import config inlined for simplicity
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+    const firebaseConfig = {
+      apiKey: "REPLACE_WITH_API_KEY",
+      authDomain: "REPLACE_WITH_PROJECT.firebaseapp.com",
+      projectId: "REPLACE_WITH_PROJECT_ID",
+    };
+    initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const info = document.getElementById('info');
+    const signOutBtn = document.getElementById('signOutBtn');
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        info.textContent = `Signed in as ${user.email}`;
+      } else {
+        // not signed in — go back to login
+        window.location.href = '/';
+      }
+    });
+
+    signOutBtn.addEventListener('click', async () => {
+      await auth.signOut();
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>

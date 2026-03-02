@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - FitConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { DEFAULT: '#7c3aed', dark: '#6d28d9', light: '#ede9fe' },
+                        accent: '#06b6d4'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            backdrop-filter: blur(14px);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-white">
+
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/home.html" class="font-extrabold text-lg flex items-center gap-2">🏋️ <span
+                    class="gradient-text">FitConnect Admin</span></a>
+            <div class="flex items-center gap-5">
+                <a href="/home.html" class="text-slate-400 hover:text-white transition-colors">App Home</a>
+                <button id="signOutBtn"
+                    class="bg-white/5 border border-white/10 text-slate-300 text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all">Sign
+                    out</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-extrabold">Admin Dashboard</h1>
+            <div class="flex gap-4">
+                <button onclick="openModal('gymModal')"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all">Add
+                    New Gym</button>
+                <button onclick="seedData()"
+                    class="bg-white/5 border border-white/10 text-slate-300 font-medium px-5 py-2.5 rounded-xl hover:bg-white/10 transition-all">Seed
+                    Data</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="glass rounded-2xl p-5">
+                <div class="text-xl mb-1">🏪</div>
+                <div id="statGyms" class="text-2xl font-extrabold">-</div>
+                <div class="text-slate-400 text-xs uppercase tracking-widest mt-0.5">Total Gyms</div>
+            </div>
+            <div class="glass rounded-2xl p-5">
+                <div class="text-xl mb-1">👤</div>
+                <div id="statUsers" class="text-2xl font-extrabold">-</div>
+                <div class="text-slate-400 text-xs uppercase tracking-widest mt-0.5">Total Users</div>
+            </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6 overflow-hidden">
+            <h2 class="text-xl font-bold mb-6">Manage Gyms</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-slate-400 text-xs uppercase tracking-widest border-b border-white/10">
+                            <th class="px-4 py-3 pb-4">Gym Name</th>
+                            <th class="px-4 py-3 pb-4">Category</th>
+                            <th class="px-4 py-3 pb-4">Monthly Fee</th>
+                            <th class="px-4 py-3 pb-4">Location</th>
+                            <th class="px-4 py-3 pb-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gymTableBody">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gym Modal -->
+    <div id="gymModal"
+        class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-8 shadow-2xl relative">
+            <button onclick="closeModal('gymModal')"
+                class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 gradient-text">Add New Gym</h2>
+            <form id="gymForm" onsubmit="submitGym(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Gym Name</label>
+                        <input id="gymName" type="text" required
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:ring-2 focus:ring-brand" />
+                    </div>
+                    <div>
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Category</label>
+                        <select id="gymCategory"
+                            class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white text-sm">
+                            <option value="Basic">Basic</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Premium">Premium</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Monthly Fee (₹)</label>
+                        <input id="gymFee" type="number" required
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+                    </div>
+                    <div>
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Multiplier</label>
+                        <input id="gymMultiplier" type="number" step="0.01" value="1.0"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+                    </div>
+                    <div>
+                        <label class="text-slate-400 text-xs font-medium block mb-1">Location</label>
+                        <input id="gymLocation" type="text" required
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-brand py-3 rounded-xl font-bold mt-4 hover:bg-brand-dark transition-all">Save
+                    Gym</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initFirebase, fetchWithAuth, doSignOut } from '/firebase-init.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+        const { auth } = await initFirebase();
+
+        onAuthStateChanged(auth, async user => {
+            if (!user) { window.location.href = '/'; return; }
+            // Verify admin status
+            const res = await fetchWithAuth('/profile');
+            const data = await res.json();
+            if (!data.ok || data.profile.role !== 'admin') {
+                alert('Access Denied. Admins only.');
+                window.location.href = '/home.html';
+                return;
+            }
+            loadData();
+        });
+
+        document.getElementById('signOutBtn').onclick = async () => { await doSignOut(); window.location.href = '/'; };
+
+        async function loadData() {
+            try {
+                const [gymsRes, usersRes] = await Promise.all([
+                    fetchWithAuth('/admin/gyms'),
+                    fetchWithAuth('/admin/users')
+                ]);
+                const gymsData = await gymsRes.json();
+                const usersData = await usersRes.json();
+
+                if (gymsData.ok) {
+                    document.getElementById('statGyms').textContent = gymsData.gyms.length;
+                    renderGyms(gymsData.gyms);
+                }
+                if (usersData.ok) {
+                    document.getElementById('statUsers').textContent = usersData.users.length;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderGyms(gyms) {
+            const tbody = document.getElementById('gymTableBody');
+            tbody.innerHTML = gyms.map(g => `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td class="px-4 py-4 font-semibold">${g.name}</td>
+                    <td class="px-4 py-4"><span class="px-2 py-1 rounded-md text-[10px] uppercase font-bold bg-white/10">${g.category}</span></td>
+                    <td class="px-4 py-4 text-slate-300">₹${g.monthlyFee}</td>
+                    <td class="px-4 py-4 text-slate-400">${g.location || '—'}</td>
+                    <td class="px-4 py-4 text-right">
+                        <button onclick="deleteGym('${g.id}')" class="text-red-400 hover:text-red-300 transition-colors">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.submitGym = async (e) => {
+            e.preventDefault();
+            const body = {
+                name: document.getElementById('gymName').value,
+                category: document.getElementById('gymCategory').value,
+                monthlyFee: document.getElementById('gymFee').value,
+                multiplier: document.getElementById('gymMultiplier').value,
+                location: document.getElementById('gymLocation').value
+            };
+            const res = await fetchWithAuth('/admin/add-gym', {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                closeModal('gymModal');
+                loadData();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to add gym');
+            }
+        };
+
+        window.deleteGym = async (id) => {
+            if (!confirm('Are you sure you want to delete this gym?')) return;
+            const res = await fetchWithAuth(\`/admin/gym/\${id}\`, { method: 'DELETE' });
+            if (res.ok) loadData();
+        };
+
+        window.seedData = async () => {
+            alert('Calling seed route...');
+            const res = await fetchWithAuth('/admin/seed-gyms', { method: 'POST' });
+            if (res.ok) loadData();
+        };
+
+        window.openModal = id => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = id => document.getElementById(id).classList.add('hidden');
+    </script>
+</body>
+
+</html>

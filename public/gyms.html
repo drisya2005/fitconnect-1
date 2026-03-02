@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gyms — FitConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            backdrop-filter: blur(14px);
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            font-size: .875rem;
+            font-weight: 500;
+            transition: color .2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #f1f5f9;
+        }
+
+        .filter-btn.active {
+            background: #7c3aed;
+            color: #fff;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-white">
+
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/home.html" class="font-extrabold text-lg flex items-center gap-2">🏋️ <span
+                    class="gradient-text">FitConnect</span></a>
+            <div class="flex items-center gap-5">
+                <a href="/home.html" class="nav-link">Home</a>
+                <a href="/dashboard.html" class="nav-link">Dashboard</a>
+                <a href="/gyms.html" class="nav-link active">Gyms</a>
+                <a href="/membership.html" class="nav-link">Membership</a>
+                <a href="/fitness.html" class="nav-link">Fitness</a>
+                <a href="/profile.html" class="nav-link">Profile</a>
+                <button id="signOutBtn"
+                    class="bg-white/5 border border-white/10 text-slate-300 text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-white/10 transition-all">Sign
+                    out</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-extrabold">🏪 Partner Gyms</h1>
+        </div>
+
+        <!-- Category filter -->
+        <div class="flex gap-2 mb-6 flex-wrap">
+            <button
+                class="filter-btn active px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-all"
+                onclick="filterGyms('all')">All</button>
+            <button
+                class="filter-btn      px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-all"
+                onclick="filterGyms('Basic')">🔵 Basic</button>
+            <button
+                class="filter-btn      px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-all"
+                onclick="filterGyms('Standard')">🟡 Standard</button>
+            <button
+                class="filter-btn      px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-slate-300 hover:bg-white/10 transition-all"
+                onclick="filterGyms('Premium')">👑 Premium</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingEl" class="flex justify-center py-16">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Gym grid -->
+        <div id="gymGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden text-center py-16 text-slate-400">
+            <div class="text-5xl mb-3">🏪</div>
+            <p class="mb-4">No gyms found. Ask an admin to seed the gym list.</p>
+            <button onclick="seedGyms()"
+                class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-5 py-2 rounded-xl">Seed
+                Sample Gyms (Admin)</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initFirebase, fetchWithAuth, doSignOut } from '/firebase-init.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+        const { auth } = await initFirebase();
+        let allGyms = [];
+
+        onAuthStateChanged(auth, async user => {
+            if (!user) { window.location.href = '/'; return; }
+            await loadGyms();
+        });
+
+        document.getElementById('signOutBtn').onclick = async () => { await doSignOut(); window.location.href = '/'; };
+
+        async function loadGyms() {
+            try {
+                const res = await fetch('/gyms');
+                const data = await res.json();
+                allGyms = data.gyms || [];
+                document.getElementById('loadingEl').classList.add('hidden');
+                renderGyms(allGyms);
+            } catch (err) { console.error(err); }
+        }
+
+        function renderGyms(gyms) {
+            const grid = document.getElementById('gymGrid');
+            const empty = document.getElementById('emptyState');
+            if (!gyms.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            grid.classList.remove('hidden');
+            const catColor = { Basic: 'border-slate-500 text-slate-300', Standard: 'border-cyan-500 text-cyan-300', Premium: 'border-yellow-500 text-yellow-300' };
+            const catBg = { Basic: 'bg-slate-500/10', Standard: 'bg-cyan-500/10', Premium: 'bg-yellow-500/10' };
+            const catEmoji = { Basic: '🔵', Standard: '🟡', Premium: '👑' };
+            grid.innerHTML = gyms.map(g => `
+      <div class="glass rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all">
+        <div class="h-28 flex items-center justify-center text-5xl ${catBg[g.category] || 'bg-purple-500/10'}">
+          ${catEmoji[g.category] || '🏋️'}
+        </div>
+        <div class="p-5">
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="font-bold text-white">${g.name}</h3>
+            <span class="text-xs font-bold border rounded-full px-2 py-0.5 ml-2 flex-shrink-0 ${catColor[g.category] || 'text-white border-white/20'}">
+              ${g.category}
+            </span>
+          </div>
+          <p class="text-slate-400 text-sm mb-3">📍 ${g.location || '—'}</p>
+          <div class="flex flex-wrap gap-1 mb-4">
+            ${(g.amenities || []).map(a => `<span class="text-xs bg-white/5 border border-white/10 rounded-full px-2.5 py-0.5 text-slate-300">${a}</span>`).join('')}
+          </div>
+          <div class="flex items-center justify-between">
+            <div><p class="text-xl font-extrabold">₹${g.monthlyFee || 0}<span class="text-slate-400 text-xs font-normal">/mo</span></p></div>
+            <a href="/checkin.html?gymId=${g.id}" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all">Check In</a>
+          </div>
+          <p class="text-slate-500 text-xs mt-2">Allocation multiplier: ${g.multiplier || 1}×</p>
+        </div>
+      </div>`).join('');
+        }
+
+        window.filterGyms = cat => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'bg-purple-600', 'text-white'));
+            event.target.classList.add('active', 'bg-purple-600', 'text-white');
+            renderGyms(cat === 'all' ? allGyms : allGyms.filter(g => g.category === cat));
+        };
+
+        window.seedGyms = async () => {
+            const res = await fetchWithAuth('/admin/seed-gyms', { method: 'POST' });
+            const d = await res.json();
+            if (d.ok) { alert('Gyms seeded!'); await loadGyms(); }
+            else alert(d.error || 'Failed (admin only)');
+        };
+    </script>
+</body>
+
+</html>

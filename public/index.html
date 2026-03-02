@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FitConnect — Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#7c3aed', dark: '#6d28d9', light: '#ede9fe' },
+            accent: '#06b6d4'
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .gradient-text {
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, .3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-2">🏋️</div>
+      <h1 class="text-3xl font-extrabold gradient-text">FitConnect</h1>
+      <p class="text-slate-400 text-sm mt-1">Kerala's Smart Multi-Gym Network</p>
+    </div>
+
+    <form id="loginForm" class="flex flex-col gap-4" onsubmit="submitLogin(event)">
+      <div>
+        <label class="text-slate-400 text-xs font-medium block mb-1">Email address</label>
+        <input id="loginEmail" type="email" required placeholder="you@example.com"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+      </div>
+      <div>
+        <label class="text-slate-400 text-xs font-medium block mb-1">Password</label>
+        <input id="loginPassword" type="password" required placeholder="••••••••"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+      </div>
+      <div id="loginAlert"></div>
+      <button type="submit" id="loginBtn"
+        class="w-full bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+        <span id="loginBtnText">Login</span><span id="loginSpinner" class="spinner hidden"></span>
+      </button>
+      <div class="flex flex-col gap-2 mt-2">
+        <p class="text-center text-slate-400 text-xs">
+          Don't have an account? <a href="/auth/register.html" class="text-brand hover:underline font-semibold">Register
+            here</a>
+        </p>
+        <p class="text-center text-slate-400 text-xs">
+          <a href="/auth/forgot-password.html" class="text-slate-500 hover:text-brand hover:underline">Forgot
+            password?</a>
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initFirebase } from '/firebase-init.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+    const { auth } = await initFirebase();
+    onAuthStateChanged(auth, u => { if (u) window.location.href = '/home.html'; });
+
+    // Handle legacy hash navigation
+    if (window.location.hash === '#register') window.location.href = '/auth/register.html';
+
+    function alert(id, msg, type = 'error') {
+      const colors = { error: 'bg-red-500/15 border-red-500/30 text-red-400', success: 'bg-green-500/15 border-green-500/30 text-green-400' };
+      document.getElementById(id).innerHTML = `<div class="border rounded-lg px-3 py-2 text-sm ${colors[type]}">${msg}</div>`;
+    }
+
+    function setLoading(on) {
+      document.getElementById('loginBtn').disabled = on;
+      document.getElementById('loginBtnText').textContent = on ? 'Logging in…' : 'Login';
+      document.getElementById('loginSpinner').classList.toggle('hidden', !on);
+    }
+
+    window.submitLogin = async e => {
+      e.preventDefault();
+      document.getElementById('loginAlert').innerHTML = '';
+      setLoading(true);
+      try {
+        await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value.trim(), document.getElementById('loginPassword').value);
+        alert('loginAlert', 'Logged in! Redirecting…', 'success');
+        setTimeout(() => window.location.href = '/home.html', 600);
+      } catch (err) {
+        alert('loginAlert', err.message);
+        setLoading(false);
+      }
+    };
+  </script>
+</body>
+
+</html>

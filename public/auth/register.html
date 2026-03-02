@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitConnect - Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { DEFAULT: '#7c3aed', dark: '#6d28d9', light: '#ede9fe' },
+                        accent: '#06b6d4'
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, .3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl">
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-2">🏋️</div>
+            <h1 class="text-3xl font-extrabold gradient-text">FitConnect</h1>
+            <p class="text-slate-400 text-sm mt-1">Create your fitness account</p>
+        </div>
+
+        <form id="registerForm" class="flex flex-col gap-4" onsubmit="submitRegister(event)">
+            <div>
+                <label class="text-slate-400 text-xs font-medium block mb-1">Full Name</label>
+                <input id="displayName" type="text" required placeholder="John Doe"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+            </div>
+            <div>
+                <label class="text-slate-400 text-xs font-medium block mb-1">Email address</label>
+                <input id="regEmail" type="email" required placeholder="you@example.com"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+            </div>
+            <div>
+                <label class="text-slate-400 text-xs font-medium block mb-1">Password <span class="text-slate-500">(min
+                        6 chars)</span></label>
+                <input id="regPassword" type="password" required placeholder="••••••••"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+            </div>
+            <div id="regAlert"></div>
+            <button type="submit" id="registerBtn"
+                class="w-full bg-brand hover:bg-brand-dark text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                <span id="regBtnText">Create account</span><span id="regSpinner" class="spinner hidden"></span>
+            </button>
+            <p class="text-center text-slate-400 text-xs">
+                Already have an account? <a href="/" class="text-brand hover:underline font-semibold">Login here</a>
+            </p>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initFirebase, fetchWithAuth } from '/firebase-init.js';
+        import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+        const { auth } = await initFirebase();
+        onAuthStateChanged(auth, u => { if (u) window.location.href = '/home.html'; });
+
+        // Handle legacy hash navigation if coming from root
+        if (window.location.hash === '#login') window.location.href = '/';
+
+        function alert(msg, type = 'error') {
+            const colors = { error: 'bg-red-500/15 border-red-500/30 text-red-400', success: 'bg-green-500/15 border-green-500/30 text-green-400' };
+            document.getElementById('regAlert').innerHTML = `<div class="border rounded-lg px-3 py-2 text-sm ${colors[type]}">${msg}</div>`;
+        }
+
+        function setLoading(on) {
+            document.getElementById('registerBtn').disabled = on;
+            document.getElementById('regBtnText').textContent = on ? 'Creating account…' : 'Create account';
+            document.getElementById('regSpinner').classList.toggle('hidden', !on);
+        }
+
+        window.submitRegister = async e => {
+            e.preventDefault();
+            document.getElementById('regAlert').innerHTML = '';
+            const email = document.getElementById('regEmail').value.trim();
+            const pw = document.getElementById('regPassword').value;
+            const name = document.getElementById('displayName').value.trim();
+
+            if (pw.length < 6) { alert('Password must be at least 6 characters'); return; }
+            setLoading(true);
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pw);
+                await updateProfile(cred.user, { displayName: name });
+
+                // Sync with server
+                await fetchWithAuth('/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ displayName: name })
+                });
+
+                alert('Account created! Redirecting…', 'success');
+                setTimeout(() => window.location.href = '/home.html', 700);
+            } catch (err) {
+                alert(err.message);
+                setLoading(false);
+            }
+        };
+    </script>
+</body>
+
+</html>
